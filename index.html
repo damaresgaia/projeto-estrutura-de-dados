@@ -2,11 +2,1170 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=/simulador/index.html">
-  <script>window.location.replace("/simulador/index.html");</script>
-  <title>Simulador de Grafos - BFS e DFS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Visual: BFS e DFS — IFSC São José (Equipe 7)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --accent-bfs: #10b981;
+      --accent-dfs: #8b5cf6;
+      --node-unvisited: #475569;
+      --node-queued: #f59e0b;
+      --node-current: #ec4899;
+      --node-visited: #10b981;
+      --edge-default: #64748b;
+      --edge-active: #ec4899;
+      --edge-tree: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand .badge {
+      font-size: 0.75rem;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--primary);
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--primary);
+    }
+
+    .brand p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .team-pill {
+      font-size: 0.8rem;
+      background: #0b1329;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+    .team-pill strong {
+      color: #38bdf8;
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1rem;
+      padding: 1rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .canvas-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .toolbar {
+      padding: 0.8rem 1rem;
+      background: rgba(15, 23, 42, 0.6);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select, button, input[type="range"] {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.45rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    select:focus, button:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    button {
+      background: #334155;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    button:hover:not(:disabled) {
+      background: #475569;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+    }
+
+    button.primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .viewport {
+      flex: 1;
+      min-height: 480px;
+      position: relative;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    }
+
+    svg#graph-canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.5rem 0.8rem;
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    /* Side Panel */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.5rem;
+    }
+
+    .ds-container {
+      min-height: 70px;
+      background: #0f172a;
+      border: 1px dashed var(--card-border);
+      border-radius: 8px;
+      padding: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .ds-stack {
+      flex-direction: column-reverse;
+      min-height: 110px;
+      justify-content: flex-start;
+      overflow-y: auto;
+      max-height: 160px;
+    }
+
+    .ds-item {
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      animation: popIn 0.3s ease;
+    }
+
+    .ds-item.top {
+      background: var(--node-current);
+      border: 2px solid white;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .visited-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      min-height: 36px;
+    }
+
+    .visited-tag {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--accent-bfs);
+      color: #34d399;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+    }
+
+    .log-box {
+      background: #0b1120;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.83rem;
+      line-height: 1.45;
+      min-height: 80px;
+      max-height: 120px;
+      overflow-y: auto;
+      color: #e2e8f0;
+    }
+    .log-box b {
+      color: var(--primary);
+    }
+    .log-box .highlight {
+      color: #facc15;
+    }
+
+    .code-view {
+      background: #090d16;
+      border-radius: 8px;
+      padding: 0.6rem;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.74rem;
+      line-height: 1.4;
+      color: #94a3b8;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+    .code-line {
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .code-line.active {
+      background: rgba(236, 72, 153, 0.3);
+      color: #f472b6;
+      font-weight: bold;
+    }
+
+    /* SVG Elements */
+    .edge {
+      stroke: var(--edge-default);
+      stroke-width: 3;
+      transition: all 0.3s;
+    }
+    .edge.active {
+      stroke: var(--edge-active);
+      stroke-width: 5;
+    }
+    .edge.tree {
+      stroke: var(--edge-tree);
+      stroke-width: 4;
+    }
+
+    .node-group {
+      cursor: pointer;
+    }
+    .node-circle {
+      fill: var(--node-unvisited);
+      stroke: #fff;
+      stroke-width: 2.5;
+      transition: all 0.3s ease;
+    }
+    .node-text {
+      fill: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      text-anchor: middle;
+      dominant-baseline: central;
+      user-select: none;
+    }
+    .node-level-text {
+      fill: #cbd5e1;
+      font-size: 11px;
+      text-anchor: middle;
+      font-weight: 600;
+    }
+
+    .node-group.current .node-circle {
+      fill: var(--node-current);
+      filter: drop-shadow(0 0 10px #ec4899);
+      r: 25;
+    }
+    .node-group.queued .node-circle {
+      fill: var(--node-queued);
+      filter: drop-shadow(0 0 6px #f59e0b);
+    }
+    .node-group.visited .node-circle {
+      fill: var(--node-visited);
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecionando para o <a href="/simulador/index.html">Simulador Interativo</a>...</p>
+
+  <header>
+    <div class="brand">
+      <h1>Simulador Interativo de Grafos</h1>
+    </div>
+  </header>
+
+  <main>
+    <!-- Área do Grafo Interativo -->
+    <section class="canvas-panel">
+      <div class="toolbar">
+        <div class="control-group">
+          <label for="algo-select">Algoritmo:</label>
+          <select id="algo-select">
+            <option value="BFS">BFS — Busca em Largura (Fila / Níveis)</option>
+            <option value="DFS">DFS — Busca em Profundidade (Pilha / Mergulho)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="graph-select">Cenário:</label>
+          <select id="graph-select">
+            <option value="arvore">1. Árvore Binária (Didático: Raiz e Folhas)</option>
+            <option value="demo" selected>2. Grafo da Apresentação (6 nós, com ciclos)</option>
+            <option value="exercicio">3. Grafo do Exercício da Turma (6 nós)</option>
+            <option value="desconexo">4. Grafo Desconexo (2 componentes)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="start-node">Origem:</label>
+          <select id="start-node"></select>
+        </div>
+
+        <div class="control-group" style="margin-left: auto;">
+          <button id="btn-prev" title="Passo Anterior" disabled>◀ Anterior</button>
+          <button id="btn-play" class="primary" title="Reproduzir / Pausar">▶ Iniciar</button>
+          <button id="btn-next" title="Próximo Passo">Próximo ▶</button>
+          <button id="btn-reset" title="Reiniciar">↻ Reset</button>
+        </div>
+      </div>
+
+      <div class="viewport">
+        <svg id="graph-canvas"></svg>
+
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--node-unvisited);"></div>
+            <span>Não visitado</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--node-queued);"></div>
+            <span id="legend-waiting-text">Na Fila (Descoberto)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--node-current);"></div>
+            <span>Sendo processado</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: var(--node-visited);"></div>
+            <span>Concluído / Visitado</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Painel Lateral Didático -->
+    <aside class="sidebar">
+      <!-- Estrutura de dados ativa: Fila ou Pilha -->
+      <div class="card">
+        <div class="card-title">
+          <span id="ds-title">Fila Auxiliar (Queue - FIFO)</span>
+          <span id="ds-rule" style="font-size:0.75rem; color:#38bdf8;">Primeiro a entrar, primeiro a sair</span>
+        </div>
+        <div id="ds-visual" class="ds-container">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Vazia</span>
+        </div>
+      </div>
+
+      <!-- Conjunto / Vetor de Visitados -->
+      <div class="card">
+        <div class="card-title">
+          <span>Vértices Visitados</span>
+          <span style="font-size: 0.75rem; color:#10b981;">Proteção contra ciclos</span>
+        </div>
+        <div id="visited-container" class="visited-list">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Nenhum visitado ainda</span>
+        </div>
+      </div>
+
+      <!-- Explicação Narrada do Passo Atual -->
+      <div class="card">
+        <div class="card-title">
+          <span>O que está acontecendo agora?</span>
+          <span id="step-counter" style="font-size: 0.75rem; color:#f59e0b;">Passo 0 / 0</span>
+        </div>
+        <div id="narrative-box" class="log-box">
+          Selecione a origem e clique em <b>"Iniciar"</b> ou <b>"Próximo"</b> para acompanhar a execução passo a passo.
+        </div>
+      </div>
+
+      <!-- Código Java em Execução (Linha Ativa) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Código Java Correspondente</span>
+        </div>
+        <div id="code-snippet" class="code-view"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // Definição dos Grafos Didáticos
+    const GRAPHS = {
+      arvore: {
+        name: "Árvore Binária (Didático - Raiz e Folhas)",
+        nodes: [
+          { id: "4", x: 360, y: 70 },
+          { id: "7", x: 240, y: 170 },
+          { id: "2", x: 480, y: 170 },
+          { id: "3", x: 420, y: 280 },
+          { id: "1", x: 540, y: 280 }
+        ],
+        edges: [
+          ["4", "7"], ["4", "2"],
+          ["2", "3"], ["2", "1"]
+        ]
+      },
+      demo: {
+        name: "Grafo da Apresentação (6 nós, múltiplos ciclos)",
+        nodes: [
+          { id: "A", x: 120, y: 150 },
+          { id: "B", x: 280, y: 80 },
+          { id: "C", x: 280, y: 260 },
+          { id: "D", x: 440, y: 70 },
+          { id: "E", x: 440, y: 220 },
+          { id: "F", x: 580, y: 260 }
+        ],
+        edges: [
+          ["A", "B"], ["A", "C"],
+          ["B", "D"], ["B", "E"],
+          ["C", "E"], ["C", "F"],
+          ["D", "E"]
+        ]
+      },
+      exercicio: {
+        name: "Grafo do Exercício da Turma (6 nós)",
+        nodes: [
+          { id: "A", x: 140, y: 200 },
+          { id: "B", x: 300, y: 100 },
+          { id: "C", x: 300, y: 300 },
+          { id: "D", x: 480, y: 100 },
+          { id: "E", x: 480, y: 300 },
+          { id: "F", x: 620, y: 200 }
+        ],
+        edges: [
+          ["A", "B"], ["A", "C"],
+          ["B", "D"], ["C", "D"], ["C", "E"],
+          ["D", "F"], ["E", "F"]
+        ]
+      },
+      desconexo: {
+        name: "Grafo Desconexo (2 componentes independentes)",
+        nodes: [
+          { id: "A", x: 140, y: 120 },
+          { id: "B", x: 300, y: 80 },
+          { id: "C", x: 220, y: 240 },
+          { id: "D", x: 460, y: 120 },
+          { id: "E", x: 600, y: 200 },
+          { id: "F", x: 480, y: 280 }
+        ],
+        edges: [
+          ["A", "B"], ["A", "C"], ["B", "C"],
+          ["D", "E"], ["E", "F"], ["D", "F"]
+        ]
+      }
+    };
+
+    // Códigos Java sincronizados (versão simplificada)
+    const CODE_BFS = [
+      "Queue<String> fila = new LinkedList<>();",
+      "Set<String> visitados = new HashSet<>();",
+      "fila.add(origem);",
+      "visitados.add(origem); // ja marca pra nao duplicar",
+      "while (!fila.isEmpty()) {",
+      "    String atual = fila.poll(); // tira o primeiro da fila",
+      "    for (String vizinho : grafo.getVizinhos(atual)) {",
+      "        if (!visitados.contains(vizinho)) {",
+      "            visitados.add(vizinho);",
+      "            fila.add(vizinho); // coloca vizinho na fila",
+      "        }",
+      "    }",
+      "}"
+    ];
+
+    const CODE_DFS = [
+      "Set<String> visitados = new HashSet<>();",
+      "void dfs(String atual) {",
+      "    visitados.add(atual);",
+      "    System.out.print(atual + \" \");",
+      "    for (String vizinho : grafo.getVizinhos(atual)) {",
+      "        if (!visitados.contains(vizinho)) {",
+      "            dfs(vizinho); // desce no vizinho",
+      "        }",
+      "    }",
+      "    // volta sozinho pro anterior quando acaba os vizinhos (backtrack)",
+      "}"
+    ];
+
+    // Estado da Aplicação
+    let currentGraphKey = "demo";
+    let currentAlgo = "BFS";
+    let startNodeId = "A";
+    let steps = [];
+    let currentStepIndex = 0;
+    let timer = null;
+    let isPlaying = false;
+    let playSpeed = 1600;
+
+    // Elementos DOM
+    const canvas = document.getElementById("graph-canvas");
+    const algoSelect = document.getElementById("algo-select");
+    const graphSelect = document.getElementById("graph-select");
+    const startNodeSelect = document.getElementById("start-node");
+    const btnPlay = document.getElementById("btn-play");
+    const btnNext = document.getElementById("btn-next");
+    const btnPrev = document.getElementById("btn-prev");
+    const btnReset = document.getElementById("btn-reset");
+    const dsTitle = document.getElementById("ds-title");
+    const dsRule = document.getElementById("ds-rule");
+    const dsVisual = document.getElementById("ds-visual");
+    const visitedContainer = document.getElementById("visited-container");
+    const narrativeBox = document.getElementById("narrative-box");
+    const stepCounter = document.getElementById("step-counter");
+    const codeSnippet = document.getElementById("code-snippet");
+    const legendWaitingText = document.getElementById("legend-waiting-text");
+
+    // Construção do Mapa de Adjacência ordenado alfabeticamente
+    function buildAdjacencyList(graph) {
+      const adj = {};
+      graph.nodes.forEach(n => adj[n.id] = []);
+      graph.edges.forEach(([u, v]) => {
+        adj[u].push(v);
+        adj[v].push(u);
+      });
+      // Ordem alfabética para desempate didático
+      Object.keys(adj).forEach(k => adj[k].sort());
+      return adj;
+    }
+
+    // Gerador de Passos do BFS
+    function generateBFSSteps(graph, start) {
+      const adj = buildAdjacencyList(graph);
+      const steps = [];
+      const queue = [];
+      const visited = new Set();
+      const levels = {};
+      const treeEdges = new Set();
+
+      // Passo Inicial
+      steps.push({
+        type: "START",
+        activeNode: null,
+        activeEdge: null,
+        queue: [],
+        visited: [],
+        levels: {},
+        treeEdges: [],
+        codeLine: 0,
+        text: `Iniciando <b>BFS</b> a partir do vértice <b>${start}</b>. A Fila e os Visitados começam vazios.`
+      });
+
+      queue.push(start);
+      visited.add(start);
+      levels[start] = 0;
+
+      steps.push({
+        type: "ENQUEUE_START",
+        activeNode: start,
+        activeEdge: null,
+        queue: [...queue],
+        visited: Array.from(visited),
+        levels: { ...levels },
+        treeEdges: [],
+        codeLine: 2,
+        text: `Vértice de origem <b>${start}</b> marcado como visitado (Nível 0) e inserido na <b>Fila</b>.`
+      });
+
+      while (queue.length > 0) {
+        const u = queue.shift();
+
+        steps.push({
+          type: "DEQUEUE",
+          activeNode: u,
+          activeEdge: null,
+          queue: [...queue],
+          visited: Array.from(visited),
+          levels: { ...levels },
+          treeEdges: Array.from(treeEdges),
+          codeLine: 5,
+          text: `Retirou <b>${u}</b> da Fila para explorar seus vizinhos adjacentes.`
+        });
+
+        const neighbors = adj[u] || [];
+        for (const v of neighbors) {
+          const edgeKey = [u, v].sort().join("-");
+          
+          steps.push({
+            type: "EXAMINE_EDGE",
+            activeNode: u,
+            activeEdge: edgeKey,
+            queue: [...queue],
+            visited: Array.from(visited),
+            levels: { ...levels },
+            treeEdges: Array.from(treeEdges),
+            codeLine: 6,
+            text: `Analisando aresta de <b>${u}</b> até o vizinho <b>${v}</b>.`
+          });
+
+          if (!visited.has(v)) {
+            visited.add(v);
+            queue.push(v);
+            levels[v] = levels[u] + 1;
+            treeEdges.add(edgeKey);
+
+            steps.push({
+              type: "ENQUEUE_NEIGHBOR",
+              activeNode: v,
+              activeEdge: edgeKey,
+              queue: [...queue],
+              visited: Array.from(visited),
+              levels: { ...levels },
+              treeEdges: Array.from(treeEdges),
+              codeLine: 8,
+              text: `Vizinho <b>${v}</b> ainda não foi visitado! Marcado como visitado (Nível ${levels[v]}), aresta incorporada à busca e <b>${v}</b> adicionado ao fim da Fila.`
+            });
+          } else {
+            steps.push({
+              type: "ALREADY_VISITED",
+              activeNode: u,
+              activeEdge: edgeKey,
+              queue: [...queue],
+              visited: Array.from(visited),
+              levels: { ...levels },
+              treeEdges: Array.from(treeEdges),
+              codeLine: 7,
+              text: `Vizinho <b>${v}</b> <span class="highlight">já está visitado</span>! Aresta ignorada para impedir ciclos ou repetição de visitas.`
+            });
+          }
+        }
+      }
+
+      steps.push({
+        type: "FINISHED",
+        activeNode: null,
+        activeEdge: null,
+        queue: [],
+        visited: Array.from(visited),
+        levels: { ...levels },
+        treeEdges: Array.from(treeEdges),
+        codeLine: 12,
+        text: `<b>BFS Finalizado!</b> A Fila está vazia. Todos os vértices alcançáveis a partir de <b>${start}</b> foram explorados camada por camada.`
+      });
+
+      return steps;
+    }
+
+    // Gerador de Passos do DFS
+    function generateDFSSteps(graph, start) {
+      const adj = buildAdjacencyList(graph);
+      const steps = [];
+      const stack = [];
+      const visited = new Set();
+      const treeEdges = new Set();
+
+      steps.push({
+        type: "START",
+        activeNode: null,
+        activeEdge: null,
+        stack: [],
+        visited: [],
+        treeEdges: [],
+        codeLine: 0,
+        text: `Iniciando <b>DFS</b> a partir de <b>${start}</b>. O algoritmo irá explorar cada caminho até o limite antes de recuar (*backtracking*).`
+      });
+
+      function dfsRecursive(u, parent = null) {
+        visited.add(u);
+        stack.push(u);
+
+        const edgeFromParent = parent ? [parent, u].sort().join("-") : null;
+        if (edgeFromParent) treeEdges.add(edgeFromParent);
+
+        steps.push({
+          type: "VISIT_NODE",
+          activeNode: u,
+          activeEdge: edgeFromParent,
+          stack: [...stack],
+          visited: Array.from(visited),
+          treeEdges: Array.from(treeEdges),
+          codeLine: 2,
+          text: `Visitou o vértice <b>${u}</b>. Ele é empilhado na Call Stack e marcado como visitado.`
+        });
+
+        const neighbors = adj[u] || [];
+        for (const v of neighbors) {
+          const edgeKey = [u, v].sort().join("-");
+
+          steps.push({
+            type: "EXAMINE_EDGE",
+            activeNode: u,
+            activeEdge: edgeKey,
+            stack: [...stack],
+            visited: Array.from(visited),
+            treeEdges: Array.from(treeEdges),
+            codeLine: 4,
+            text: `De <b>${u}</b>, examinando vizinho <b>${v}</b>.`
+          });
+
+          if (!visited.has(v)) {
+            steps.push({
+              type: "DIVE_DEEP",
+              activeNode: v,
+              activeEdge: edgeKey,
+              stack: [...stack],
+              visited: Array.from(visited),
+              treeEdges: Array.from(treeEdges),
+              codeLine: 6,
+              text: `Vizinho <b>${v}</b> não visitado! <b>Mergulhando em profundidade:</b> chamada recursiva <code>dfs(${v})</code>.`
+            });
+            dfsRecursive(v, u);
+          } else {
+            steps.push({
+              type: "ALREADY_VISITED",
+              activeNode: u,
+              activeEdge: edgeKey,
+              stack: [...stack],
+              visited: Array.from(visited),
+              treeEdges: Array.from(treeEdges),
+              codeLine: 5,
+              text: `Vizinho <b>${v}</b> já foi visitado. Não explora para evitar loop no ciclo.`
+            });
+          }
+        }
+
+        // Backtrack
+        stack.pop();
+        steps.push({
+          type: "BACKTRACK",
+          activeNode: u,
+          activeEdge: null,
+          stack: [...stack],
+          visited: Array.from(visited),
+          treeEdges: Array.from(treeEdges),
+          codeLine: 9,
+          text: `Todos os vizinhos de <b>${u}</b> foram explorados. <span class="highlight">Backtracking (desempilhamento)</span>: retornando para quem o chamou.`
+        });
+      }
+
+      dfsRecursive(start);
+
+      steps.push({
+        type: "FINISHED",
+        activeNode: null,
+        activeEdge: null,
+        stack: [],
+        visited: Array.from(visited),
+        treeEdges: Array.from(treeEdges),
+        codeLine: 10,
+        text: `<b>DFS Finalizado!</b> A Pilha de chamadas retornou à origem. Ramo completamente explorado.`
+      });
+
+      return steps;
+    }
+
+    // Renderização do SVG do Grafo
+    function renderGraphSVG() {
+      const graph = GRAPHS[currentGraphKey];
+      canvas.innerHTML = "";
+
+      // 1. Renderizar Arestas
+      graph.edges.forEach(([u, v]) => {
+        const n1 = graph.nodes.find(n => n.id === u);
+        const n2 = graph.nodes.find(n => n.id === v);
+        const edgeId = `edge-${[u, v].sort().join("-")}`;
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("id", edgeId);
+        line.setAttribute("class", "edge");
+        line.setAttribute("x1", n1.x);
+        line.setAttribute("y1", n1.y);
+        line.setAttribute("x2", n2.x);
+        line.setAttribute("y2", n2.y);
+        canvas.appendChild(line);
+      });
+
+      // 2. Renderizar Vértices
+      graph.nodes.forEach(n => {
+        const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        group.setAttribute("id", `node-${n.id}`);
+        group.setAttribute("class", "node-group");
+        group.setAttribute("transform", `translate(${n.x}, ${n.y})`);
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("class", "node-circle");
+        circle.setAttribute("r", 20);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("class", "node-text");
+        text.textContent = n.id;
+
+        const levelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        levelText.setAttribute("id", `level-text-${n.id}`);
+        levelText.setAttribute("class", "node-level-text");
+        levelText.setAttribute("y", 34);
+        levelText.textContent = "";
+
+        group.appendChild(circle);
+        group.appendChild(text);
+        group.appendChild(levelText);
+        canvas.appendChild(group);
+
+        // Clique para selecionar nova origem
+        group.addEventListener("click", () => {
+          startNodeSelect.value = n.id;
+          startNodeId = n.id;
+          resetSimulation();
+        });
+      });
+    }
+
+    // Atualiza o snippet de código Java
+    function renderCodeSnippet() {
+      const lines = currentAlgo === "BFS" ? CODE_BFS : CODE_DFS;
+      codeSnippet.innerHTML = lines
+        .map((line, idx) => `<div class="code-line" id="code-line-${idx}">${escapeHtml(line)}</div>`)
+        .join("");
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Atualiza a visualização do passo atual
+    function updateStepView() {
+      if (steps.length === 0) return;
+      const step = steps[currentStepIndex];
+      const graph = GRAPHS[currentGraphKey];
+
+      stepCounter.textContent = `Passo ${currentStepIndex + 1} de ${steps.length}`;
+      narrativeBox.innerHTML = step.text;
+
+      // Atualizar nós no SVG
+      graph.nodes.forEach(n => {
+        const group = document.getElementById(`node-${n.id}`);
+        const levelText = document.getElementById(`level-text-${n.id}`);
+        group.className.baseVal = "node-group";
+
+        const isVisited = step.visited && step.visited.includes(n.id);
+        const isQueued = (currentAlgo === "BFS" && step.queue && step.queue.includes(n.id)) ||
+                         (currentAlgo === "DFS" && step.stack && step.stack.includes(n.id));
+        const isCurrent = step.activeNode === n.id;
+
+        if (isVisited) group.classList.add("visited");
+        if (isQueued) group.classList.add("queued");
+        if (isCurrent) group.classList.add("current");
+
+        if (currentAlgo === "BFS" && step.levels && step.levels[n.id] !== undefined) {
+          levelText.textContent = `Nível ${step.levels[n.id]}`;
+        } else {
+          levelText.textContent = "";
+        }
+      });
+
+      // Atualizar Arestas
+      document.querySelectorAll(".edge").forEach(el => {
+        el.className.baseVal = "edge";
+      });
+
+      if (step.treeEdges) {
+        step.treeEdges.forEach(edgeKey => {
+          const edgeEl = document.getElementById(`edge-${edgeKey}`);
+          if (edgeEl) edgeEl.classList.add("tree");
+        });
+      }
+
+      if (step.activeEdge) {
+        const activeEdgeEl = document.getElementById(`edge-${step.activeEdge}`);
+        if (activeEdgeEl) activeEdgeEl.classList.add("active");
+      }
+
+      // Atualizar Painel de Estrutura de Dados (Fila ou Pilha)
+      if (currentAlgo === "BFS") {
+        dsTitle.textContent = "Fila Auxiliar (Queue - FIFO)";
+        dsRule.textContent = "Primeiro a entrar, primeiro a sair";
+        dsVisual.className = "ds-container";
+        legendWaitingText.textContent = "Na Fila (Descoberto)";
+
+        if (!step.queue || step.queue.length === 0) {
+          dsVisual.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted);">Fila Vazia</span>`;
+        } else {
+          dsVisual.innerHTML = step.queue.map((node, i) => 
+            `<div class="ds-item ${i === 0 ? 'top' : ''}">${node} ${i === 0 ? '<small style="font-size:10px; margin-left:4px;">(Cabeça)</small>' : ''}</div>`
+          ).join("");
+        }
+      } else {
+        dsTitle.textContent = "Pilha de Execução (Call Stack - LIFO)";
+        dsRule.textContent = "Último a entrar, primeiro a sair (Backtracking)";
+        dsVisual.className = "ds-container ds-stack";
+        legendWaitingText.textContent = "Na Pilha de Execução";
+
+        if (!step.stack || step.stack.length === 0) {
+          dsVisual.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted);">Pilha Vazia</span>`;
+        } else {
+          dsVisual.innerHTML = step.stack.map((node, i) => 
+            `<div class="ds-item ${i === step.stack.length - 1 ? 'top' : ''}">${node} ${i === step.stack.length - 1 ? '<small style="font-size:10px; margin-left:4px;">(Topo)</small>' : ''}</div>`
+          ).join("");
+        }
+      }
+
+      // Atualizar Conjunto de Visitados
+      if (!step.visited || step.visited.length === 0) {
+        visitedContainer.innerHTML = `<span style="font-size:0.8rem; color:var(--text-muted);">Nenhum visitado ainda</span>`;
+      } else {
+        visitedContainer.innerHTML = step.visited.map(v => 
+          `<span class="visited-tag">✓ ${v}</span>`
+        ).join("");
+      }
+
+      // Destacar linha de código ativa
+      document.querySelectorAll(".code-line").forEach(l => l.classList.remove("active"));
+      if (step.codeLine !== undefined) {
+        const lineEl = document.getElementById(`code-line-${step.codeLine}`);
+        if (lineEl) lineEl.classList.add("active");
+      }
+
+      // Atualizar botões
+      btnPrev.disabled = (currentStepIndex === 0);
+      btnNext.disabled = (currentStepIndex === steps.length - 1);
+    }
+
+    // Controle da Simulação
+    function prepareSimulation() {
+      const graph = GRAPHS[currentGraphKey];
+      if (currentAlgo === "BFS") {
+        steps = generateBFSSteps(graph, startNodeId);
+      } else {
+        steps = generateDFSSteps(graph, startNodeId);
+      }
+      currentStepIndex = 0;
+      updateStepView();
+    }
+
+    function resetSimulation() {
+      stopAutoPlay();
+      prepareSimulation();
+    }
+
+    function nextStep() {
+      if (currentStepIndex < steps.length - 1) {
+        currentStepIndex++;
+        updateStepView();
+      } else {
+        stopAutoPlay();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        updateStepView();
+      }
+    }
+
+    function startAutoPlay() {
+      if (currentStepIndex >= steps.length - 1) {
+        currentStepIndex = 0;
+      }
+      isPlaying = true;
+      btnPlay.textContent = "⏸ Pausar";
+      btnPlay.classList.remove("primary");
+      btnPlay.style.background = "#f59e0b";
+
+      timer = setInterval(() => {
+        if (currentStepIndex < steps.length - 1) {
+          nextStep();
+        } else {
+          stopAutoPlay();
+        }
+      }, playSpeed);
+    }
+
+    function stopAutoPlay() {
+      isPlaying = false;
+      clearInterval(timer);
+      btnPlay.textContent = "▶ Iniciar";
+      btnPlay.classList.add("primary");
+      btnPlay.style.background = "";
+    }
+
+    // Inicialização da interface e eventos
+    function init() {
+      // Popular select de origem
+      function updateStartNodeOptions() {
+        const graph = GRAPHS[currentGraphKey];
+        startNodeSelect.innerHTML = graph.nodes
+          .map(n => `<option value="${n.id}">Vértice ${n.id}</option>`)
+          .join("");
+        startNodeSelect.value = startNodeId;
+      }
+
+      updateStartNodeOptions();
+      renderGraphSVG();
+      renderCodeSnippet();
+      prepareSimulation();
+
+      // Eventos
+      algoSelect.addEventListener("change", (e) => {
+        currentAlgo = e.target.value;
+        renderCodeSnippet();
+        resetSimulation();
+      });
+
+      graphSelect.addEventListener("change", (e) => {
+        currentGraphKey = e.target.value;
+        const availableNodes = GRAPHS[currentGraphKey].nodes.map(n => n.id);
+        if (!availableNodes.includes(startNodeId)) {
+          startNodeId = availableNodes[0];
+        }
+        updateStartNodeOptions();
+        renderGraphSVG();
+        resetSimulation();
+      });
+
+      startNodeSelect.addEventListener("change", (e) => {
+        startNodeId = e.target.value;
+        resetSimulation();
+      });
+
+      btnPlay.addEventListener("click", () => {
+        if (isPlaying) stopAutoPlay();
+        else startAutoPlay();
+      });
+
+      btnNext.addEventListener("click", () => {
+        stopAutoPlay();
+        nextStep();
+      });
+
+      btnPrev.addEventListener("click", () => {
+        stopAutoPlay();
+        prevStep();
+      });
+
+      btnReset.addEventListener("click", () => {
+        resetSimulation();
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
 </body>
 </html>
+
