@@ -1,0 +1,51 @@
+# Compilação e Bytecodes Java
+*.class
+bin/
+out/
+build/
+target/
+
+# Arquivos de Pacote
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Configurações de IDEs e Editores
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Logs e Arquivos Temporários
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Arquivos de Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
