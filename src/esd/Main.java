@@ -3,7 +3,7 @@ package esd;
 public class Main {
 
     public static void main(String[] args) {
-        // 1. Teste na arvore (exemplo facil pra turma entender primeiro)
+        // 1. Teste na arvore 
         System.out.println("=== 1. TESTE COM ARVORE BINARIA ===");
         ArvoreBinaria.No raiz = new ArvoreBinaria.No(4);
         raiz.esquerda = new ArvoreBinaria.No(7);
